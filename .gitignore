@@ -1,0 +1,21 @@
+﻿# Node.js
+node_modules/
+
+# Environment dan rahasia
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.cache
+
+# Windows dan macOS
+Thumbs.db
+.DS_Store
+
+# Editor
+.vscode/

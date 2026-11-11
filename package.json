@@ -1,0 +1,9 @@
+{
+  "name": "schoollist",
+  "version": "1.0.0",
+  "private": true,
+  "description": "StudyList — School Task Manager Website",
+  "scripts": {
+    "dev": "node scripts/dev.js"
+  }
+}
