@@ -1,94 +1,110 @@
 <?php
-/**
- * StudyList — School Task Manager
- * Database Connection & Configuration File
- * Uses PHP Data Objects (PDO) with MySQL
- */
+// Atur zona waktu ke Indonesia (WIB)
+date_default_timezone_set('Asia/Jakarta');
 
-// Start session if not already started
+// Mulai session untuk simpan pesan notifikasi
 if (session_status() === PHP_SESSION_NONE) {
-    session_start();
+    @session_start();
 }
 
-// Prevent browser from caching dynamic database contents
+// Cegah browser simpan cache halaman lama
 if (!headers_sent()) {
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     header('Cache-Control: post-check=0, pre-check=0', false);
     header('Pragma: no-cache');
 }
 
-// Database Credentials (Standard XAMPP / Local MySQL setup)
-$dbHost     = '127.0.0.1'; // 127.0.0.1 avoids IPv6 localhost resolution delay on Windows
-$dbPort     = '3306';
-$dbName     = 'school_todolist_db';
-$dbUser     = 'root';
-$dbPass     = '';
-$dbCharset  = 'utf8mb4';
+// === SETTING DATABASE MYSQL (Ubah di sini jika nama DB / password berbeda) ===
+$dbHost     = '127.0.0.1';           // Alamat server MySQL
+$dbPort     = '3306';                // Port MySQL
+$dbName     = 'school_todolist_db';  // Nama database
+$dbUser     = 'root';                // Username MySQL (default: root)
+$dbPass     = '';                    // Password MySQL (default: kosong)
+$dbCharset  = 'utf8mb4';             // Karakter teks UTF-8
 
 $pdo = null;
 $dbError = null;
 
+// === SCRIPT UTAMA PENGHUBUNG KE DATABASE MYSQL (PDO) ===
 try {
     $dsn = "mysql:host={$dbHost};port={$dbPort};dbname={$dbName};charset={$dbCharset}";
+    
     $options = [
-        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
-        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-        PDO::ATTR_EMULATE_PREPARES   => false,
-        PDO::ATTR_AUTOCOMMIT         => true,
+        PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION, // Tampilkan pesan error jika query gagal
+        PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,       // Ambil data dalam bentuk array
+        PDO::ATTR_EMULATE_PREPARES   => false,                  // Mencegah SQL Injection
+        PDO::ATTR_AUTOCOMMIT         => true,                   // Otomatis simpan perubahan data
     ];
 
-    $pdo = new PDO($dsn, $dbUser, $dbPass, $options);
+    // Script penghubung PHP ke database MySQL
+    $pdo = new PDO($dsn, $dbUser, $dbPass, $options); // <-- INI SCRIPT KONEKSI KE DATABASE
+
+    // Pastikan kolom sort_order dan due_time sudah ada di tabel tasks
+    ensureTasksTableColumns($pdo);
+
 } catch (PDOException $e) {
-    // Save error message cleanly without leaking database credentials
-    $dbError = "Gagal terhubung ke database '{$dbName}'. Pastikan MySQL pada XAMPP sudah aktif dan file 'database/school_todolist_db.sql' sudah diimpor ke phpMyAdmin.";
+    // Pesan jika koneksi database gagal
+    $dbError = "Gagal terhubung ke database '{$dbName}'. Pastikan MySQL pada XAMPP/Laragon sudah aktif.";
 }
 
-/**
- * Retrieve all subjects from the database
- *
- * @param PDO|null $pdo
- * @return array
- */
-function getAllSubjects($pdo) {
-    if (!$pdo) {
-        return [];
-    }
+// Tambah kolom sort_order & due_time otomatis jika belum ada di database
+function ensureTasksTableColumns($pdo) {
+    if (!$pdo) return;
     try {
-        $stmt = $pdo->query("SELECT id, subject_name FROM subjects ORDER BY id ASC");
+        $checkSort = $pdo->query("SHOW COLUMNS FROM tasks LIKE 'sort_order'");
+        if (!$checkSort->fetch()) {
+            $pdo->exec("ALTER TABLE tasks ADD COLUMN sort_order INT NOT NULL DEFAULT 0 AFTER status");
+            $pdo->exec("ALTER TABLE tasks ADD INDEX idx_tasks_sort_order (sort_order)");
+            $pdo->exec("UPDATE tasks SET sort_order = id WHERE sort_order = 0");
+        }
+
+        $checkTime = $pdo->query("SHOW COLUMNS FROM tasks LIKE 'due_time'");
+        if (!$checkTime->fetch()) {
+            $pdo->exec("ALTER TABLE tasks ADD COLUMN due_time TIME NULL AFTER due_date");
+        }
+    } catch (Throwable $e) {
+        // Abaikan jika database belum siap
+    }
+}
+
+// Ambil semua data mata pelajaran dari database
+function getAllSubjects($pdo) {
+    if (!$pdo) return [];
+    try {
+        $stmt = $pdo->query("SELECT id, subject_name FROM subjects ORDER BY id ASC"); // Query ambil mata pelajaran
         return $stmt->fetchAll();
     } catch (PDOException $e) {
         return [];
     }
 }
 
-/**
- * Helper to escape output and prevent XSS (Cross-Site Scripting)
- *
- * @param mixed $value
- * @return string
- */
+// Bersihkan teks agar aman dari script berbahaya (Anti-XSS)
 function e($value) {
     return htmlspecialchars((string)($value ?? ''), ENT_QUOTES, 'UTF-8');
 }
 
-/**
- * Format a SQL date (YYYY-MM-DD) into Indonesian readable format
- *
- * @param string|null $dateStr
- * @return string
- */
-function formatDueDate($dateStr) {
-    if (empty($dateStr)) {
-        return 'Tanpa tenggat';
-    }
+// Format jam jadi "14.30 WIB"
+function formatDueTime($timeStr) {
+    if (empty($timeStr)) return '';
+    $clean = substr(trim($timeStr), 0, 5); // Ambil format jam menit HH:MM
+    if (!preg_match('/^\d{2}:\d{2}$/', $clean)) return e($timeStr);
+    $formatted = str_replace(':', '.', $clean);
+    return "{$formatted} WIB";
+}
 
-    $targetDate = strtotime($dateStr);
-    if (!$targetDate) {
-        return e($dateStr);
-    }
+// Format tanggal ke bahasa Indonesia (contoh: "Hari ini · 12 Nov 2026")
+function formatDueDate($dateStr, $timeStr = null) {
+    if (empty($dateStr)) return 'Tanpa tenggat';
 
-    $today = strtotime(date('Y-m-d'));
-    $diffDays = (int)round(($targetDate - $today) / 86400);
+    $cleanDate = substr(trim($dateStr), 0, 10);
+    $parts = explode('-', $cleanDate);
+    if (count($parts) !== 3) return e($dateStr);
+
+    $year = (int)$parts[0];
+    $month = (int)$parts[1];
+    $day = (int)$parts[2];
+
+    if (!checkdate($month, $day, $year)) return e($dateStr);
 
     $months = [
         1 => 'Jan', 2 => 'Feb', 3 => 'Mar', 4 => 'Apr',
@@ -96,28 +112,61 @@ function formatDueDate($dateStr) {
         9 => 'Sep', 10 => 'Okt', 11 => 'Nov', 12 => 'Des'
     ];
 
-    $d = date('j', $targetDate);
-    $m = $months[(int)date('n', $targetDate)];
-    $y = date('Y', $targetDate);
-    $formatted = "{$d} {$m} {$y}";
+    $monthName = $months[$month] ?? '';
+    $formatted = "{$day} {$monthName} {$year}";
 
-    if ($diffDays === 0) {
-        return "Hari ini ({$formatted})";
-    } elseif ($diffDays === 1) {
-        return "Besok ({$formatted})";
-    } elseif ($diffDays === -1) {
-        return "Kemarin ({$formatted})";
+    // Cek apakah tanggal hari ini, besok, atau kemarin
+    $todayDate = date('Y-m-d');
+    $tomorrowDate = date('Y-m-d', strtotime('+1 day'));
+    $yesterdayDate = date('Y-m-d', strtotime('-1 day'));
+
+    if ($cleanDate === $todayDate) {
+        $datePart = "Hari ini · {$formatted}";
+    } elseif ($cleanDate === $tomorrowDate) {
+        $datePart = "Besok · {$formatted}";
+    } elseif ($cleanDate === $yesterdayDate) {
+        $datePart = "Kemarin · {$formatted}";
+    } else {
+        $datePart = $formatted;
     }
 
-    return $formatted;
+    if (!empty($timeStr)) {
+        $timePart = formatDueTime($timeStr);
+        if ($timePart !== '') {
+            return "{$datePart} · {$timePart}";
+        }
+    }
+
+    return $datePart;
 }
 
-/**
- * Set a session flash message
- *
- * @param string $type 'success' | 'error' | 'warning' | 'info'
- * @param string $message
- */
+// Cek status deadline (merah/overdue jika lewat waktu, biru/today jika hari ini)
+function getTaskDueStatus($dueDate, $dueTime = null, $isCompleted = false) {
+    if (empty($dueDate) || $isCompleted) return ''; // Tugas selesai tidak dihitung overdue
+
+    $cleanDate = substr(trim($dueDate), 0, 10);
+    $now = time();
+    $todayDate = date('Y-m-d');
+
+    if (!empty($dueTime)) {
+        $cleanTime = substr(trim($dueTime), 0, 5);
+        $taskTimestamp = strtotime("{$cleanDate} {$cleanTime}:00"); // Hitung sampai jam menit
+    } else {
+        $taskTimestamp = strtotime("{$cleanDate} 23:59:59"); // Jika tanpa jam, batasnya akhir hari
+    }
+
+    if ($taskTimestamp < $now) {
+        return 'is-overdue'; // Tenggat sudah lewat (merah)
+    }
+
+    if ($cleanDate === $todayDate) {
+        return 'is-today'; // Tenggat hari ini (biru)
+    }
+
+    return '';
+}
+
+// Simpan pesan notifikasi sementara (flash message)
 function setFlashMessage($type, $message) {
     $_SESSION['flash_message'] = [
         'type' => $type,
@@ -125,11 +174,7 @@ function setFlashMessage($type, $message) {
     ];
 }
 
-/**
- * Retrieve and clear the session flash message
- *
- * @return array|null
- */
+// Ambil pesan notifikasi lalu hapus dari session
 function getFlashMessage() {
     if (isset($_SESSION['flash_message'])) {
         $flash = $_SESSION['flash_message'];

@@ -1,19 +1,15 @@
 <?php
-/**
- * StudyList — Editorial Study Planner
- * Create Task Handler & Standalone Form
- * Ensures data is 100% saved to MySQL tasks table with valid subject_id
- */
+// === PROSES SIMPAN TUGAS BARU (INSERT) ===
 require_once __DIR__ . '/config/database.php';
 
-// Fetch all subjects for validation & form
+// Ambil daftar mata pelajaran untuk pilihan dropdown
 $subjects = getAllSubjects($pdo);
 
-// Process POST Request
+// Proses saat tombol submit ditekan (Method POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $returnView = trim($_POST['view'] ?? 'overview');
-    if (!in_array($returnView, ['overview', 'all', 'today', 'completed', 'calendar'], true)) {
-        $returnView = 'overview';
+    $returnView = trim($_POST['view'] ?? 'all');
+    if (!in_array($returnView, ['all', 'today', 'completed', 'calendar'], true)) {
+        $returnView = 'all';
     }
 
     if (!$pdo) {
@@ -22,23 +18,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $title = trim($_POST['title'] ?? '');
-    $subjectId = (int)($_POST['subject_id'] ?? 0);
-    $description = trim($_POST['description'] ?? '');
-    $dueDate = trim($_POST['due_date'] ?? '');
-    $priority = strtolower(trim($_POST['priority'] ?? 'medium'));
-    $status = strtolower(trim($_POST['status'] ?? 'pending'));
+    // Ambil data yang dikirim dari form
+    $title = trim($_POST['title'] ?? '');               // Nama tugas
+    $subjectId = (int)($_POST['subject_id'] ?? 0);      // ID mata pelajaran
+    $description = trim($_POST['description'] ?? '');  // Deskripsi tugas
+    $dueDate = trim($_POST['due_date'] ?? '');          // Tanggal tenggat
+    $dueTime = trim($_POST['due_time'] ?? '');          // Jam pengumpulan
+    $priority = strtolower(trim($_POST['priority'] ?? 'medium')); // Prioritas (low, medium, high)
+    $status = strtolower(trim($_POST['status'] ?? 'pending'));    // Status pengerjaan
 
+    // Validasi data input
     $errors = [];
 
-    // 1. Validate Task Title
+    // Validasi nama tugas
     if ($title === '') {
         $errors[] = 'Nama tugas wajib diisi.';
     } elseif (mb_strlen($title) > 150) {
         $errors[] = 'Nama tugas maksimal 150 karakter.';
     }
 
-    // 2. Validate Subject directly from MySQL
+    // Validasi mata pelajaran
     if ($subjectId <= 0) {
         $errors[] = 'Mata pelajaran wajib dipilih.';
     } else {
@@ -46,74 +45,80 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $checkSubj->execute([$subjectId]);
         $subjectRow = $checkSubj->fetch();
         if (!$subjectRow) {
-            $errors[] = 'Mata pelajaran yang dipilih tidak valid atau belum terdaftar di database MySQL.';
+            $errors[] = 'Mata pelajaran yang dipilih tidak valid.';
         }
     }
 
-    // 3. Validate Priority
     if (!in_array($priority, ['low', 'medium', 'high'], true)) {
         $priority = 'medium';
     }
 
-    // 4. Validate Status
     if (!in_array($status, ['pending', 'in_progress', 'completed'], true)) {
         $status = 'pending';
     }
 
-    // 5. Validate & Format Due Date
+    // Validasi tanggal tenggat
     $dueDateVal = null;
     if ($dueDate !== '') {
         if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dueDate) && strtotime($dueDate)) {
             $dueDateVal = $dueDate;
         } else {
-            $errors[] = 'Format tanggal pengumpulan tidak valid (gunakan format YYYY-MM-DD).';
+            $errors[] = 'Format tanggal pengumpulan tidak valid (gunakan YYYY-MM-DD).';
+        }
+    }
+
+    // Validasi jam pengumpulan: jika jam diisi, tanggal wajib dipilih
+    $dueTimeVal = null;
+    if ($dueTime !== '') {
+        if ($dueDateVal === null) {
+            $errors[] = 'Tanggal pengumpulan wajib diisi jika jam pengumpulan ditentukan.';
+        } elseif (preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/', $dueTime)) {
+            $dueTimeVal = substr($dueTime, 0, 5) . ':00';
+        } else {
+            $errors[] = 'Format jam pengumpulan tidak valid (gunakan format 24 jam HH:MM).';
         }
     }
 
     $descVal = ($description === '') ? null : $description;
 
+    // Jika ada error, kembali dan tampilkan pesan kesalahan
     if (!empty($errors)) {
         setFlashMessage('error', implode(' ', $errors));
         header('Location: index.php?view=' . urlencode($returnView));
         exit;
     }
 
-    // 6. Execute INSERT into MySQL tasks table
     try {
-        $sql = "INSERT INTO tasks (subject_id, title, description, due_date, priority, status)
-                VALUES (:subject_id, :title, :description, :due_date, :priority, :status)";
-        $stmt = $pdo->prepare($sql);
-        $executed = $stmt->execute([
+        // Mulai transaksi database
+        $pdo->beginTransaction();
+
+        // Geser nomor urut tugas lama ke bawah (+1) agar tugas baru di posisi 1 (paling atas)
+        $pdo->exec("UPDATE tasks SET sort_order = COALESCE(sort_order, 0) + 1");
+
+        // === SCRIPT QUERY SIMPAN TUGAS KE DATABASE MYSQL (INSERT) ===
+        $sql = "INSERT INTO tasks (subject_id, title, description, due_date, due_time, priority, status, sort_order)
+                VALUES (:subject_id, :title, :description, :due_date, :due_time, :priority, :status, 1)";
+        $stmt = $pdo->prepare($sql); // <-- PREPARE QUERY INSERT
+        $stmt->execute([             // <-- EKSEKUSI SIMPAN KE DATABASE
             ':subject_id'  => $subjectId,
             ':title'       => $title,
             ':description' => $descVal,
             ':due_date'    => $dueDateVal,
+            ':due_time'    => $dueTimeVal,
             ':priority'    => $priority,
             ':status'      => $status,
         ]);
 
         $newTaskId = (int)$pdo->lastInsertId();
+        $pdo->commit(); // Simpan transaksi ke database
 
-        if (!$executed || $newTaskId <= 0) {
-            throw new Exception("Query penyimpanan tidak menghasilkan ID baru.");
-        }
-
-        // 7. Verify data actually exists in MySQL
-        $verifyStmt = $pdo->prepare("SELECT tasks.id, tasks.title, subjects.subject_name 
-                                     FROM tasks 
-                                     JOIN subjects ON tasks.subject_id = subjects.id 
-                                     WHERE tasks.id = ?");
-        $verifyStmt->execute([$newTaskId]);
-        $verifiedRow = $verifyStmt->fetch();
-
-        if (!$verifiedRow) {
-            throw new Exception("Verifikasi penyimpanan gagal: Tugas tidak ditemukan setelah proses simpan.");
-        }
-
-        setFlashMessage('success', "Tugas \"" . $verifiedRow['title'] . "\" untuk mata pelajaran " . $verifiedRow['subject_name'] . " berhasil disimpan.");
+        setFlashMessage('success', "Tugas \"{$title}\" berhasil disimpan.");
         header('Location: index.php?view=' . urlencode($returnView));
         exit;
     } catch (Throwable $e) {
+        if ($pdo && $pdo->inTransaction()) {
+            $pdo->rollBack(); // Batalkan jika terjadi error
+        }
         error_log("[StudyList CREATE Error] " . $e->getMessage());
         setFlashMessage('error', 'Gagal menyimpan tugas ke database: ' . $e->getMessage());
         header('Location: index.php?view=' . urlencode($returnView));
@@ -121,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// Fallback: If accessed via GET, render a dedicated create page
+// Tampilan form fallback jika halaman diakses langsung melalui GET
 $pageTitle = 'Tambah Tugas';
 $pageSubtitle = 'Catat tugas baru dan atur jadwal pengerjaannya';
 require_once __DIR__ . '/includes/header.php';
@@ -134,7 +139,7 @@ require_once __DIR__ . '/includes/header.php';
   </div>
 
   <form action="create.php" method="POST" class="standalone-form">
-    <input type="hidden" name="view" value="overview">
+    <input type="hidden" name="view" value="all">
 
     <div class="form-group">
       <label class="form-label" for="taskTitle">Nama Tugas <span class="required">*</span></label>

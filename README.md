@@ -1,159 +1,200 @@
-# StudyList — School Task Manager Website
+# StudyList — School Task Manager
 
-**StudyList** adalah aplikasi web To Do List modern yang dirancang khusus untuk mengelola tugas dan aktivitas belajar siswa di sekolah. Dibangun menggunakan PHP Native dan PDO yang terhubung langsung ke database MySQL sungguhan, dengan frontend HTML5, CSS3 murni, dan JavaScript modern yang responsif.
+**StudyList** adalah aplikasi web pencatat dan pengelola tugas sekolah yang dibangun menggunakan PHP Native dan database MySQL dengan antarmuka bertema **Blue Academic Planner**.
 
----
-
-## Fitur Utama
-
-- **Dashboard Statistik Realtime**: Menampilkan total tugas, tugas aktif, dan tugas selesai yang dihitung langsung dari query database MySQL (`COUNT(*)`).
-- **Kalender Tugas Bulanan Interaktif**:
-  - Tampilan bulan dan tahun dengan tombol navigasi bulan sebelumnya, bulan berikutnya, dan tombol "Hari Ini".
-  - Susunan hari Senin sampai Minggu sesuai kalender akademis.
-  - Penanda tanggal hari ini (*highlight today*).
-  - Indikator warna status tugas pada setiap tanggal: biru untuk aktif/belum selesai, hijau untuk tugas tuntas.
-  - Badge jumlah tugas pada tanggal yang memiliki tenggat waktu pengumpulan.
-  - Panel detail interaktif: klik tanggal manapun untuk melihat seluruh tugas pada tanggal tersebut beserta tombol edit dan hapus.
-  - Integrasi formulir tambah tugas: klik tombol tambah pada kalender otomatis mengisi tanggal tenggat di formulir modal.
-- **CRUD Lengkap & Terverifikasi ke MySQL**:
-  - **Create**: Tambah tugas baru dengan nama tugas, pilihan mata pelajaran dinamis dari tabel `subjects` MySQL, deskripsi, tanggal pengumpulan, prioritas (*Low*, *Medium*, *High*), dan status (*Pending*, *In Progress*, *Completed*).
-  - **Read**: Menampilkan daftar tugas dengan informasi lengkap, relasi nama mata pelajaran menggunakan SQL JOIN, label prioritas, badge status, dan format tenggat pengumpulan ramah pengguna.
-  - **Update**: Memperbarui data tugas dengan drawer samping interaktif atau halaman khusus form prefilled; perubahan mata pelajaran otomatis memperbarui `subject_id` foreign key di MySQL.
-  - **Delete**: Menghapus tugas dengan modal konfirmasi aman berbasis request POST.
-- **Mata Pelajaran Dinamis**: Pilihan mata pelajaran (Matematika, Bahasa Indonesia, Bahasa Inggris, Informatika, Pendidikan Pancasila, Produktif Kejuruan, PJOK, Seni Budaya, Sejarah) diambil langsung dari tabel `subjects` di MySQL, bukan hardcoded.
-- **Pencarian & Filter Lengkap**:
-  - Pencarian teks realtime berdasarkan nama dan deskripsi tugas.
-  - Filter berdasarkan mata pelajaran dari database.
-  - Filter berdasarkan status (*Pending*, *In Progress*, *Completed*).
-  - Filter berdasarkan prioritas (*Low*, *Medium*, *High*).
-  - Kategori navigasi: **Ringkasan**, **Semua Tugas**, **Kalender**, **Hari Ini** (tenggat hari ini), dan **Selesai** (tugas tuntas).
-- **Desain Editorial Study Planner**: Menggunakan palet warm cream (`#F7F6F0`), forest green (`#27483D`), soft sage (`#E5ECE5`), white, dan charcoal dengan tipografi Plus Jakarta Sans, navigasi horizontal modern, panel drawer samping kanan, serta layout yang sepenuhnya responsif untuk laptop, tablet, dan smartphone.
-- **Keamanan Terjamin**: Menggunakan PDO *Prepared Statements* untuk mencegah SQL Injection, validasi input di server, serta *output sanitization* menggunakan `htmlspecialchars()`.
+Aplikasi ini dirancang untuk memudahkan siswa mencatat, memantau tenggat waktu (*deadline*), dan mengatur prioritas belajar secara teratur, baik dalam mode terang (*Light Mode*) maupun mode gelap (*Dark Mode*).
 
 ---
 
-## Struktur Folder Project
+## A. Tentang StudyList
+
+* **Apa itu StudyList?**: Aplikasi to-do list tugas sekolah yang terhubung langsung ke database MySQL sungguhan menggunakan koneksi PHP PDO.
+* **Tujuan Website**: Membantu siswa mengelola jadwal dan tugas akademik agar tidak ada tugas yang terlewat atau terlambat dikumpulkan.
+* **Kegunaan Website**: Memberikan ruang belajar digital yang rapi, modern, dan bebas distraksi dengan informasi status, prioritas, mata pelajaran, serta kalender tugas bulanan.
+* **Konsep Desain**: **Blue Academic Planner** — perpaduan palet biru modern, clean, dan profesional tanpa warna hijau, memberikan kenyamanan mata saat digunakan dalam durasi belajar yang lama.
+
+---
+
+## B. Fitur Utama
+
+1. **Tambah Tugas**: Menambahkan tugas baru lengkap dengan nama, mata pelajaran, tenggat waktu, prioritas, status, dan deskripsi melalui panel drawer samping kanan.
+2. **Lihat Tugas**: Menampilkan seluruh tugas dalam susunan baris meja (*horizontal row*) yang rapi dan terstruktur.
+3. **Edit Tugas**: Memperbarui informasi tugas yang sudah tersimpan melalui form drawer edit.
+4. **Hapus Tugas**: Menghapus tugas yang sudah selesai atau dibatalkan dengan modal konfirmasi aman berbasis request POST.
+5. **Status Pengerjaan**: Membagi progres tugas menjadi *Belum Dikerjakan*, *Sedang Dikerjakan*, dan *Selesai* (dengan efek coret teks halus).
+6. **Tingkat Prioritas**: Mengelompokkan urgensi pengerjaan tugas (*Rendah*, *Sedang*, dan *Tinggi*).
+7. **Mata Pelajaran Dinamis**: Pilihan mata pelajaran (Matematika, Bahasa Indonesia, Informatika, dll.) diambil langsung dari database MySQL.
+8. **Pencarian & Filter**: Mencari tugas berdasarkan kata kunci dan menyaring daftar berdasarkan mata pelajaran, status, prioritas, atau tab ringkas (*Semua*, *Aktif*, *Selesai*).
+9. **Kalender Tugas**: Menampilkan jadwal tugas bulanan interaktif lengkap dengan penanda tanggal dan panel rincian tugas per hari.
+10. **Dark Mode & Light Mode**: Tombol pengganti tema pada navbar (ikon Matahari & Bulan) dengan perubahan instan tanpa reload dan tersimpan di `localStorage`.
+11. **Drag & Drop Pengurutan Tugas**: Mengatur posisi tugas dengan menarik ikon grip di sebelah kiri tugas pada halaman Semua Tugas. Urutan tersimpan permanen ke database MySQL (`tasks.sort_order`) melalui AJAX transaction.
+12. **Jam Pengumpulan (Deadline Time)**: Menentukan jam tenggat tugas (format 24 jam `HH.MM WIB`). Terintegrasi dengan perhitungan status keterlambatan (*overdue*) berbasis zona waktu Asia/Jakarta dan pengurutan kronologis di panel detail kalender.
+
+---
+
+## C. Identitas Desain & Palet Warna
+
+StudyList menggunakan konsep **Blue Academic Planner** yang konsisten di seluruh elemen antarmuka:
+
+### Light Mode
+* **Background**: `#F5F8FF` (Biru es terang lembut)
+* **Surface / Card**: `#FFFFFF` (Putih bersih)
+* **Primary Blue**: `#2563EB` (Biru akademik utama)
+* **Primary Hover**: `#1D4ED8` (Biru tua saat hover)
+* **Soft Blue**: `#DBEAFE` (Aksen biru lembut)
+* **Border**: `#E2E8F0` (Garis tepi halus)
+* **Text Primary**: `#172033` (Teks judul tajam)
+* **Text Secondary**: `#64748B` (Teks pendukung abu-abu)
+
+### Dark Mode
+* **Background Utama**: `#0B1220` (Midnight navy pekat nyaman di mata)
+* **Surface / Card**: `#172338` (Kartu biru gelap kontras tinggi)
+* **Secondary Surface**: `#1E2C43` (Area kontrol, input form & header sekunder)
+* **Border**: `#34445C` (Garis pemisah rapi dan jelas)
+* **Text Primary**: `#F8FAFC` (Teks judul putih jernih)
+* **Text Secondary**: `#CBD5E1` (Teks pendukung abu-abu terang)
+* **Primary Blue**: `#60A5FA` (Biru terang fokus tinggi)
+* **Accent Blue**: `#3B82F6` (Biru tombol aksi utama)
+
+---
+
+## D. Teknologi yang Digunakan
+
+* **HTML5**: Menyusun struktur semantik antarmuka website.
+* **CSS3**: Mengatur tata letak (Flexbox & Grid), animasi drawer, palet warna Blue Academic Planner, serta tema Dark Mode & Light Mode tanpa framework luar.
+* **JavaScript (ES6+)**: Menangani interaksi buka-tutup drawer, modal konfirmasi, pergantian tema, auto-submit filter, dan engine kalender.
+* **PHP Native 8.x**: Memproses logika aplikasi, validasi form di server, dan sanitasi output HTML (anti-XSS).
+* **PDO (PHP Data Objects)**: Lapisan koneksi database yang aman dengan *Prepared Statements* untuk mencegah serangan SQL Injection.
+* **MySQL**: Menyimpan seluruh data mata pelajaran dan daftar tugas dalam tabel berelasi.
+* **Node.js & npm**: Menjalankan development server lokal melalui perintah `npm run dev` (`scripts/dev.js`).
+
+---
+
+## E. Struktur Folder Project
 
 ```text
 schoollist/
 │
 ├── assets/
 │   ├── css/
-│   │   └── style.css            # Desain CSS murni modern, responsif & kalender
+│   │   └── style.css            # Styling visual Blue Academic Planner, Dark Mode & responsive
 │   └── js/
-│       └── script.js            # Interaksi modal, engine kalender & filter
+│       └── script.js            # Interaksi drawer, modal hapus, tema & kalender
 │
 ├── config/
-│   └── database.php             # Koneksi PDO MySQL, no-cache header & helper
+│   └── database.php             # Koneksi PHP ke database MySQL (PDO) & fungsi helper
 │
 ├── database/
-│   └── school_todolist_db.sql   # Skema DB, foreign key & 9 data mapel awal
+│   ├── migration_sort_order_due_time.sql # Skrip migrasi kolom sort_order & due_time
+│   └── school_todolist_db.sql   # Skema database, tabel subjects & tasks, data awal
 │
 ├── includes/
-│   ├── header.php               # Header HTML, navigasi atas & flash message
-│   ├── navbar.php               # Navigasi horizontal (Ringkasan, Semua Tugas, Kalender, dll.)
-│   └── footer.php               # Right Drawer Tambah/Edit, Modal Hapus & script footer
+│   ├── header.php               # Tag <head>, script deteksi tema, dan notifikasi
+│   ├── navbar.php               # Navigasi 4 menu, tombol tema & tombol tambah tugas
+│   └── footer.php               # Markup drawer tambah/edit, modal hapus, load script
 │
 ├── scripts/
-│   └── dev.js                   # Node.js runner untuk PHP built-in server
+│   └── dev.js                   # Runner server PHP built-in untuk npm run dev
 │
-├── index.php                    # Dashboard utama, kalender & daftar tugas
-├── create.php                   # Pemrosesan penambahan tugas baru ke MySQL
-├── update.php                   # Pemrosesan pembaruan tugas
-├── delete.php                   # Pemrosesan penghapusan tugas (POST only)
-├── package.json                 # Konfigurasi npm script ("npm run dev")
-└── README.md                    # Dokumentasi lengkap panduan aplikasi
+├── create.php                   # Menambahkan tugas baru ke MySQL
+├── delete.php                   # Menghapus tugas dari MySQL (POST)
+├── index.php                    # Halaman utama (daftar tugas & kalender)
+├── reorder.php                  # Endpoint AJAX untuk menyimpan urutan drag & drop (POST)
+├── package.json                 # Konfigurasi npm script ("dev": "node scripts/dev.js")
+├── README.md                    # Dokumentasi panduan project
+└── update.php                   # Memperbarui data tugas di MySQL (POST)
+└── update.php                   # Memperbarui data tugas di MySQL
 ```
 
 ---
 
-## Panduan Menjalankan Aplikasi
+## F. Database MySQL (`school_todolist_db`)
 
-Ikuti 5 langkah mudah berikut untuk menjalankan website StudyList:
+Database terdiri dari 2 tabel utama yang saling berelasi:
 
-### Langkah 1: Menyalakan MySQL melalui XAMPP
-1. Buka aplikasi **XAMPP Control Panel** (atau Laragon).
-2. Pada baris **MySQL**, klik tombol **Start** hingga indikator berwarna hijau dan port `3306` aktif.
-*(Catatan: Layanan Apache di XAMPP tidak wajib dinyalakan karena kita menggunakan PHP built-in server via port 8000).*
+1. **`subjects` (Mata Pelajaran)**:
+   * `id`: Kunci utama (*Primary Key*, Auto Increment).
+   * `subject_name`: Nama mata pelajaran (unik, misal: Matematika, Bahasa Inggris, Informatika).
+   * `created_at`: Waktu data dibuat.
 
-### Langkah 2: Mengimpor Database melalui phpMyAdmin
-1. Buka browser dan akses phpMyAdmin di:
-   ```text
-   http://localhost/phpmyadmin
-   ```
-2. Klik tab **Import** pada menu navigasi atas.
-3. Klik tombol **Choose File** / **Browse...** lalu pilih file:
-   ```text
-   database/school_todolist_db.sql
-   ```
-4. Gulir ke bawah dan klik tombol **Import** (atau **Go**).
-5. Database baru bernama `school_todolist_db` akan otomatis terbuat beserta 2 tabel berelasi:
-   - `subjects`: 9 data mata pelajaran awal (termasuk Sejarah).
-   - `tasks`: data contoh tugas sekolah dengan tenggat waktu bervariasi (`CURDATE()`, `DATE_ADD()`, `DATE_SUB()`).
-6. Anda dapat memverifikasi isi tabel melalui menu **Browse** pada tabel `subjects` dan `tasks`.
+2. **`tasks` (Daftar Tugas)**:
+   * `id`: Kunci utama (*Primary Key*, Auto Increment).
+   * `subject_id`: Kunci asing (*Foreign Key*) yang terhubung ke `subjects.id`.
+   * `title`: Nama tugas (wajib diisi).
+   * `description`: Catatan instruksi tugas (opsional).
+   * `due_date`: Tanggal pengumpulan tugas (`YYYY-MM-DD`).
+   * `priority`: Tingkat prioritas (`low`, `medium`, `high`).
+   * `status`: Status pengerjaan (`pending`, `in_progress`, `completed`).
+   * `created_at` & `updated_at`: Waktu pencatatan dan pembaruan data.
 
-### Langkah 3: Membuka Terminal pada Folder Project
-Buka terminal (Command Prompt, PowerShell, atau VS Code Terminal) lalu arahkan ke direktori project:
+> **Hubungan Relasi**: Kolom `tasks.subject_id` berelasi langsung dengan `subjects.id` dengan aturan `ON UPDATE CASCADE` dan `ON DELETE RESTRICT`. Artinya, setiap tugas wajib memiliki mata pelajaran yang sah di database.
+
+---
+
+## G. File Penting dan Fungsi Kodenya
+
+Berikut adalah daftar file utama dan perannya dalam menghubungkan website dengan database:
+
+| File | Fungsi Utama | Hubungan dengan Database |
+| :--- | :--- | :--- |
+| **`config/database.php`** | **Menghubungkan PHP dengan MySQL** | Membuka koneksi `new PDO()`, mengatur charset UTF-8, menangani error koneksi, dan menyediakan fungsi sanitasi data. |
+| **`index.php`** | Mengambil dan menampilkan data tugas | Menjalankan query `SELECT ... JOIN subjects` untuk menampilkan daftar tugas, menghitung total statistik, dan menyaring filter pencarian. |
+| **`create.php`** | Menambahkan tugas ke database | Memvalidasi input form dari drawer lalu mengeksekusi query `INSERT INTO tasks`. |
+| **`update.php`** | Memperbarui data tugas | Menerima data editan lalu mengeksekusi query `UPDATE tasks SET ... WHERE id = ?`. |
+| **`delete.php`** | Menghapus tugas dari database | Menerima ID tugas via POST lalu mengeksekusi query `DELETE FROM tasks WHERE id = ?`. |
+| **`assets/js/script.js`** | Mengatur interaksi website | Menangani buka-tutup drawer, modal hapus, filter, kalender, dan toggle Dark/Light Mode. |
+| **`assets/css/style.css`** | Mengatur tampilan website | Mendefinisikan warna tema (Light & Dark Mode), layout tabel horizontal, drawer, dan responsive. |
+
+---
+
+## H. Cara Menjalankan Website
+
+Ikuti 5 langkah mudah berikut untuk menjalankan StudyList di komputer lokal:
+
+### 1. Menyalakan MySQL di XAMPP atau Laragon
+Buka **XAMPP Control Panel** (atau Laragon), lalu klik **Start** pada baris **MySQL** hingga port `3306` aktif.
+
+### 2. Mengimpor Database melalui phpMyAdmin
+* Buka browser dan akses `http://localhost/phpmyadmin`.
+* Klik tab **Import**.
+* Pilih file database pada project:
+  ```text
+  database/school_todolist_db.sql
+  ```
+* Klik tombol **Import** (atau **Go**). Database `school_todolist_db` akan terbuat secara otomatis.
+
+### 3. Masuk ke Folder Project
+Buka terminal (Command Prompt, PowerShell, atau terminal VS Code), lalu arahkan ke direktori project:
 ```bash
 cd "d:\Todolist Sekolah"
 ```
 
-### Langkah 4: Menjalankan npm run dev
-Jalankan perintah berikut di terminal:
+### 4. Menjalankan npm run dev
+Jalankan perintah berikut:
 ```bash
 npm run dev
 ```
+Script akan mendeteksi PHP dan mengaktifkan web server lokal di port 8000.
 
-Script akan secara otomatis:
-- Mendeteksi PHP di komputer Anda (dari environment variable `PHP_BINARY`, `C:\xampp\php\php.exe`, `D:\xampp\php\php.exe`, atau PATH sistem).
-- Menjalankan PHP built-in development server pada alamat `127.0.0.1:8000`.
-- Menangani spasi pada nama folder direktori secara aman.
-- Menampilkan pesan informasi status server.
-
-### Langkah 5: Membuka Website di Browser
-Buka browser favorit Anda (Chrome, Edge, Firefox) dan akses alamat:
+### 5. Membuka Website di Browser
+Buka browser dan akses alamat:
 ```text
 http://127.0.0.1:8000
 ```
-
-Untuk menghentikan server, tekan tombol **Ctrl + C** di terminal.
-
----
-
-## Skema Database (`school_todolist_db`)
-
-Database dirancang dengan relasi integritas referensial:
-
-```
-┌──────────────────────────┐          ┌─────────────────────────────────────────┐
-│         subjects         │          │                  tasks                  │
-├──────────────────────────┤          ├─────────────────────────────────────────┤
-│ id (INT UNSIGNED PK)     │◄────┐    │ id (INT UNSIGNED PK)                    │
-│ subject_name (VARCHAR)   │     │    │ subject_id (INT UNSIGNED FK) ───────────┘
-│ created_at (TIMESTAMP)   │     │    │ title (VARCHAR 150)                     │
-└──────────────────────────┘     │    │ description (TEXT)                      │
-                                 └─── │ due_date (DATE)                         │
-                                      │ priority (ENUM 'low','medium','high')   │
-                                      │ status (ENUM 'pending',...)             │
-                                      │ created_at (TIMESTAMP)                  │
-                                      │ updated_at (TIMESTAMP)                  │
-                                      └─────────────────────────────────────────┘
-```
-
-- **Foreign Key Constraint**:
-  `CONSTRAINT fk_tasks_subject FOREIGN KEY (subject_id) REFERENCES subjects(id) ON UPDATE CASCADE ON DELETE RESTRICT`
+Untuk mematikan web server lokal, tekan `Ctrl + C` pada jendela terminal.
 
 ---
 
-## Skenario Pengujian Database & Fitur
+## I. Contoh Alur CRUD
 
-Untuk memastikan sinkronisasi data antara website dan MySQL:
+1. **CREATE (Tambah Tugas)**:
+   Pengguna mengklik tombol **+ Tambah Tugas** -> mengisi form pada drawer samping -> data dikirim via POST ke `create.php` -> PHP memvalidasi input -> query `INSERT INTO tasks` dijalankan -> halaman kembali ke daftar tugas dengan notifikasi sukses.
 
-1. **Tambah Tugas**: Tambahkan tugas bernama `Kalkulus` dengan mata pelajaran `Matematika`.
-2. **Verifikasi MySQL**: Periksa tabel `tasks` di phpMyAdmin, pastikan kolom `title` bernilai `Kalkulus` dan `subject_id` adalah ID Matematika (nilai: `1`).
-3. **Muat Ulang (Refresh)**: Refresh halaman website, pastikan tugas tetap tampil dengan badge Matematika.
-4. **Edit Tugas**: Ubah nama tugas menjadi `Kalkulus Lanjut` dan ubah mata pelajaran ke `Informatika`.
-5. **Verifikasi Perubahan**: Periksa di MySQL, pastikan `title` dan `subject_id` telah diperbarui ke ID Informatika.
-6. **Kalender**: Buka menu **Calendar**, tanggal tugas akan memiliki penanda lingkaran warna dan tampil di panel samping saat tanggal diklik.
-7. **Hapus Tugas**: Klik tombol Hapus (ikon tempat sampah), konfirmasi pada modal. Periksa di phpMyAdmin bahwa data tugas telah terhapus permanen dari MySQL.
-8. **Statistik**: Kartu statistik Total, Aktif, dan Selesai selalu cocok dengan hasil query `SELECT COUNT(*) FROM tasks`.
+2. **READ (Melihat Tugas)**:
+   Ketika membuka `index.php`, query `SELECT tasks.*, subjects.subject_name FROM tasks JOIN subjects ...` dijalankan -> seluruh baris tugas ditampilkan lengkap dengan badge prioritas, status, dan tanggal tenggat.
+
+3. **UPDATE (Edit Tugas)**:
+   Pengguna mengklik ikon pensil pada baris tugas -> form drawer edit terisi otomatis dengan data tugas terkait -> pengguna mengubah data dan mengklik **Simpan Perubahan** -> dikirim ke `update.php` -> query `UPDATE tasks SET ... WHERE id = ?` dijalankan di MySQL.
+
+4. **DELETE (Hapus Tugas)**:
+   Pengguna mengklik ikon tempat sampah -> popup konfirmasi muncul menampilkan judul tugas -> pengguna mengonfirmasi -> dikirim ke `delete.php` via POST -> query `DELETE FROM tasks WHERE id = ?` menghapus baris dari MySQL secara permanen.

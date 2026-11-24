@@ -1,19 +1,15 @@
 <?php
-/**
- * StudyList — Editorial Study Planner
- * Update Task Handler & Standalone Edit Form
- * Ensures tasks are updated in MySQL with correct subject_id foreign key
- */
+// === PROSES SIMPAN PERUBAHAN TUGAS (UPDATE) ===
 require_once __DIR__ . '/config/database.php';
 
-// Fetch all subjects for validation & form
+// Ambil daftar mata pelajaran untuk pilihan dropdown
 $subjects = getAllSubjects($pdo);
 
-// Process POST Request
+// Proses saat tombol simpan perubahan ditekan (Method POST)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $returnView = trim($_POST['view'] ?? 'overview');
-    if (!in_array($returnView, ['overview', 'all', 'today', 'completed', 'calendar'], true)) {
-        $returnView = 'overview';
+    $returnView = trim($_POST['view'] ?? 'all');
+    if (!in_array($returnView, ['all', 'today', 'completed', 'calendar'], true)) {
+        $returnView = 'all';
     }
 
     if (!$pdo) {
@@ -22,17 +18,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
-    $id = (int)($_POST['id'] ?? 0);
-    $title = trim($_POST['title'] ?? '');
-    $subjectId = (int)($_POST['subject_id'] ?? 0);
-    $description = trim($_POST['description'] ?? '');
-    $dueDate = trim($_POST['due_date'] ?? '');
-    $priority = strtolower(trim($_POST['priority'] ?? 'medium'));
-    $status = strtolower(trim($_POST['status'] ?? 'pending'));
+    // Ambil data yang dikirim dari form edit
+    $id = (int)($_POST['id'] ?? 0);                     // ID tugas yang diedit
+    $title = trim($_POST['title'] ?? '');               // Nama tugas baru
+    $subjectId = (int)($_POST['subject_id'] ?? 0);      // ID mata pelajaran baru
+    $description = trim($_POST['description'] ?? '');  // Deskripsi baru
+    $dueDate = trim($_POST['due_date'] ?? '');          // Tanggal tenggat baru
+    $dueTime = trim($_POST['due_time'] ?? '');          // Jam pengumpulan baru
+    $priority = strtolower(trim($_POST['priority'] ?? 'medium')); // Prioritas baru
+    $status = strtolower(trim($_POST['status'] ?? 'pending'));    // Status baru
 
+    // Validasi data input
     $errors = [];
 
-    // 1. Validate ID
+    // Validasi ID tugas
     if ($id <= 0) {
         $errors[] = 'ID tugas tidak valid.';
     } else {
@@ -43,14 +42,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // 2. Validate Title
+    // Validasi nama tugas
     if ($title === '') {
         $errors[] = 'Nama tugas wajib diisi.';
     } elseif (mb_strlen($title) > 150) {
         $errors[] = 'Nama tugas maksimal 150 karakter.';
     }
 
-    // 3. Validate Subject
+    // Validasi mata pelajaran
     if ($subjectId <= 0) {
         $errors[] = 'Mata pelajaran wajib dipilih.';
     } else {
@@ -62,17 +61,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
-    // 4. Validate Priority
     if (!in_array($priority, ['low', 'medium', 'high'], true)) {
         $priority = 'medium';
     }
 
-    // 5. Validate Status
     if (!in_array($status, ['pending', 'in_progress', 'completed'], true)) {
         $status = 'pending';
     }
 
-    // 6. Validate Due Date
+    // Validasi tanggal pengumpulan
     $dueDateVal = null;
     if ($dueDate !== '') {
         if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dueDate) && strtotime($dueDate)) {
@@ -82,8 +79,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
 
+    // Validasi jam pengumpulan: jika jam diisi, tanggal wajib dipilih
+    $dueTimeVal = null;
+    if ($dueTime !== '') {
+        if ($dueDateVal === null) {
+            $errors[] = 'Tanggal pengumpulan wajib diisi jika jam pengumpulan ditentukan.';
+        } elseif (preg_match('/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/', $dueTime)) {
+            $dueTimeVal = substr($dueTime, 0, 5) . ':00';
+        } else {
+            $errors[] = 'Format jam pengumpulan tidak valid (gunakan format 24 jam HH:MM).';
+        }
+    }
+
     $descVal = ($description === '') ? null : $description;
 
+    // Jika ada error, kembali dan tampilkan pesan kesalahan
     if (!empty($errors)) {
         setFlashMessage('error', implode(' ', $errors));
         header('Location: index.php?view=' . urlencode($returnView));
@@ -91,62 +101,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     try {
+        // === SCRIPT QUERY PERBARUI DATA TUGAS DI DATABASE MYSQL (UPDATE) ===
         $sql = "UPDATE tasks
                 SET subject_id = :subject_id,
                     title = :title,
                     description = :description,
                     due_date = :due_date,
+                    due_time = :due_time,
                     priority = :priority,
                     status = :status
                 WHERE id = :id";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
+        $stmt = $pdo->prepare($sql); // <-- PREPARE QUERY UPDATE
+        $stmt->execute([             // <-- EKSEKUSI PERUBAHAN KE DATABASE
             ':subject_id'  => $subjectId,
             ':title'       => $title,
             ':description' => $descVal,
             ':due_date'    => $dueDateVal,
+            ':due_time'    => $dueTimeVal,
             ':priority'    => $priority,
             ':status'      => $status,
-            ':id'          => $id
+            ':id'          => $id,
         ]);
 
-        // Verify updated row
-        $verifyStmt = $pdo->prepare("SELECT tasks.id, tasks.title, subjects.subject_name 
-                                     FROM tasks 
-                                     JOIN subjects ON tasks.subject_id = subjects.id 
-                                     WHERE tasks.id = ?");
-        $verifyStmt->execute([$id]);
-        $verifiedRow = $verifyStmt->fetch();
-
-        setFlashMessage('success', "Tugas \"" . $verifiedRow['title'] . "\" (Mata Pelajaran: " . $verifiedRow['subject_name'] . ") berhasil diperbarui.");
+        setFlashMessage('success', "Tugas \"{$title}\" berhasil diperbarui.");
         header('Location: index.php?view=' . urlencode($returnView));
         exit;
     } catch (Throwable $e) {
         error_log("[StudyList UPDATE Error] " . $e->getMessage());
-        setFlashMessage('error', 'Gagal memperbarui data tugas di database: ' . $e->getMessage());
+        setFlashMessage('error', 'Gagal memperbarui tugas: ' . $e->getMessage());
         header('Location: index.php?view=' . urlencode($returnView));
         exit;
     }
 }
 
-// Fallback: If accessed via GET with ?id=..., render prefilled edit page
+// Mengambil data tugas untuk form fallback (GET)
 $id = (int)($_GET['id'] ?? 0);
 if ($id <= 0 || !$pdo) {
-    setFlashMessage('error', 'Tugas tidak ditemukan.');
     header('Location: index.php');
     exit;
 }
 
 try {
-    $stmt = $pdo->prepare("SELECT tasks.*, subjects.subject_name 
-                           FROM tasks 
-                           JOIN subjects ON tasks.subject_id = subjects.id 
-                           WHERE tasks.id = ?");
+    $stmt = $pdo->prepare("SELECT * FROM tasks WHERE id = ?");
     $stmt->execute([$id]);
     $task = $stmt->fetch();
 
     if (!$task) {
-        setFlashMessage('error', 'Tugas yang dimaksud tidak ditemukan.');
+        setFlashMessage('error', 'Tugas tidak ditemukan.');
         header('Location: index.php');
         exit;
     }
@@ -169,7 +170,7 @@ require_once __DIR__ . '/includes/header.php';
 
   <form action="update.php" method="POST" class="standalone-form">
     <input type="hidden" name="id" value="<?= (int)$task['id'] ?>">
-    <input type="hidden" name="view" value="overview">
+    <input type="hidden" name="view" value="all">
 
     <div class="form-group">
       <label class="form-label" for="taskTitle">Nama Tugas <span class="required">*</span></label>

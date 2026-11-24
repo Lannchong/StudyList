@@ -1,17 +1,13 @@
 <?php
-/**
- * StudyList — School Task Manager
- * Delete Task Handler
- * Safely removes a task from MySQL with validation
- */
+// === PROSES HAPUS TUGAS DARI DATABASE (DELETE) ===
 require_once __DIR__ . '/config/database.php';
 
-$returnView = trim($_POST['view'] ?? 'overview');
-if (!in_array($returnView, ['overview', 'all', 'today', 'completed', 'calendar'], true)) {
-    $returnView = 'overview';
+$returnView = trim($_POST['view'] ?? 'all');
+if (!in_array($returnView, ['all', 'today', 'completed', 'calendar'], true)) {
+    $returnView = 'all';
 }
 
-// Only allow POST request for safety
+// Hanya izinkan request method POST (keamanan form)
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     setFlashMessage('error', 'Metode request tidak diizinkan.');
     header('Location: index.php?view=' . urlencode($returnView));
@@ -24,6 +20,7 @@ if (!$pdo) {
     exit;
 }
 
+// Ambil ID tugas yang akan dihapus
 $id = (int)($_POST['id'] ?? 0);
 
 if ($id <= 0) {
@@ -33,36 +30,29 @@ if ($id <= 0) {
 }
 
 try {
-    // Check if task exists and fetch its title for feedback
-    $checkStmt = $pdo->prepare("SELECT tasks.title, subjects.subject_name 
-                                FROM tasks 
-                                JOIN subjects ON tasks.subject_id = subjects.id 
-                                WHERE tasks.id = ?");
+    // Ambil judul tugas untuk pesan notifikasi
+    $checkStmt = $pdo->prepare("SELECT tasks.title FROM tasks WHERE tasks.id = ?");
     $checkStmt->execute([$id]);
     $task = $checkStmt->fetch();
 
     if (!$task) {
-        setFlashMessage('error', 'Tugas tidak ditemukan atau sudah dihapus sebelumnya.');
+        setFlashMessage('error', 'Tugas tidak ditemukan.');
         header('Location: index.php?view=' . urlencode($returnView));
         exit;
     }
 
     $title = $task['title'];
-    $subjectName = $task['subject_name'];
 
-    // Delete record from MySQL
-    $deleteStmt = $pdo->prepare("DELETE FROM tasks WHERE id = ?");
-    $deleteStmt->execute([$id]);
+    // === SCRIPT QUERY HAPUS DATA DARI DATABASE MYSQL ===
+    $deleteStmt = $pdo->prepare("DELETE FROM tasks WHERE id = ?"); // <-- QUERY DELETE
+    $deleteStmt->execute([$id]); // Eksekusi hapus data
 
-    if ($deleteStmt->rowCount() > 0) {
-        setFlashMessage('success', "Tugas \"" . $title . "\" (" . $subjectName . ") berhasil dihapus dari database MySQL.");
-    } else {
-        setFlashMessage('warning', "Tugas tidak ditemukan saat proses penghapusan.");
-    }
+    setFlashMessage('success', "Tugas \"{$title}\" berhasil dihapus.");
 } catch (PDOException $e) {
     error_log("[StudyList DELETE Error] " . $e->getMessage());
-    setFlashMessage('error', 'Gagal menghapus tugas dari MySQL: ' . $e->getMessage());
+    setFlashMessage('error', 'Gagal menghapus tugas dari database: ' . $e->getMessage());
 }
 
+// Kembali ke halaman daftar tugas
 header('Location: index.php?view=' . urlencode($returnView));
 exit;
