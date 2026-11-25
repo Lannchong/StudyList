@@ -1,5 +1,5 @@
 <?php
-// === SCRIPT AJAX SIMPAN URUTAN TUGAS (DRAG & DROP) ===
+// SCRIPT AJAX SIMPAN URUTAN TUGAS (DRAG & DROP) 
 declare(strict_types=1);
 
 header('Content-Type: application/json; charset=UTF-8');

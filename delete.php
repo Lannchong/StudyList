@@ -1,5 +1,5 @@
 <?php
-// === PROSES HAPUS TUGAS DARI DATABASE (DELETE) ===
+// PROSES HAPUS TUGAS DARI DATABASE (DELETE) 
 require_once __DIR__ . '/config/database.php';
 
 $returnView = trim($_POST['view'] ?? 'all');

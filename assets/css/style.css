@@ -55,7 +55,7 @@
   color-scheme: light;
 }
 
-/* === 2. WARNA TEMA DARK MODE (UBAH WARNA MODE GELAP DI SINI) === */
+/* 2. WARNA TEMA DARK MODE (UBAH WARNA MODE GELAP DI SINI) */
 [data-theme="dark"] {
   color-scheme: dark;
   --bg: #0B1220;               /* Background halaman dark */
@@ -221,17 +221,17 @@ input, button, select, textarea {
   display: flex;
   align-items: center;
   list-style: none;
-  gap: 6px;
+  gap: 4px;
 }
 
 .nav-link {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 14px;
+  padding: 7px 11px;
   border-radius: var(--radius-md);
   text-decoration: none;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-secondary);
   transition: all var(--transition-fast);
@@ -257,6 +257,70 @@ input, button, select, textarea {
   background-color: var(--primary);
   color: #FFFFFF;
   line-height: 1.4;
+}
+
+/* Dropdown Menu Navbar untuk 4 Filter Waktu */
+.nav-item-dropdown {
+  position: relative;
+}
+
+.nav-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background-color: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  list-style: none;
+  min-width: 175px;
+  padding: 6px;
+  display: none;
+  z-index: 100;
+}
+
+.nav-item-dropdown:hover .nav-dropdown-menu,
+.nav-item-dropdown:focus-within .nav-dropdown-menu {
+  display: block;
+}
+
+.nav-dropdown-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-primary);
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-fast);
+  gap: 10px;
+}
+
+.nav-dropdown-item:hover,
+.nav-dropdown-item.is-active {
+  background-color: var(--soft-blue);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.dropdown-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: var(--radius-full);
+  background-color: var(--primary);
+  color: #FFFFFF;
+  line-height: 1.4;
+}
+
+.dropdown-chevron {
+  transition: transform var(--transition-fast);
+}
+
+.nav-item-dropdown:hover .dropdown-chevron {
+  transform: rotate(180deg);
 }
 
 .navbar-actions {
@@ -380,7 +444,7 @@ input, button, select, textarea {
   gap: 6px;
 }
 
-/* === BAGIAN WARNA TOMBOL (BUTTON) === */
+/* BAGIAN WARNA TOMBOL (BUTTON) */
 .btn-editorial-primary {
   background-color: var(--primary); /* <-- UBAH WARNA TOMBOL UTAMA DI SINI */
   color: #FFFFFF;
@@ -618,6 +682,9 @@ input, button, select, textarea {
 .editorial-tabs-row {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .editorial-tabs {
@@ -659,6 +726,51 @@ input, button, select, textarea {
 }
 
 [data-theme="dark"] .editorial-tab.is-active {
+  background-color: var(--accent-blue);
+  color: #FFFFFF;
+}
+
+/* 4 Filter Waktu (Hari Ini, Minggu Ini, Bulan Ini, Tahun Ini) */
+.time-filter-pills {
+  display: inline-flex;
+  align-items: center;
+  background-color: var(--surface-secondary);
+  padding: 4px;
+  border-radius: var(--radius-full);
+  gap: 3px;
+  border: 1px solid var(--border);
+  flex-wrap: wrap;
+}
+
+.time-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: var(--radius-full);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  text-align: center;
+  white-space: nowrap;
+  box-sizing: border-box;
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.time-pill:hover {
+  color: var(--primary);
+}
+
+.time-pill.is-active {
+  background-color: var(--primary);
+  color: #FFFFFF;
+  font-weight: 600;
+  box-shadow: var(--shadow-xs);
+}
+
+[data-theme="dark"] .time-pill.is-active {
   background-color: var(--accent-blue);
   color: #FFFFFF;
 }
@@ -1292,6 +1404,29 @@ input, button, select, textarea {
   color: var(--text-primary);
 }
 
+.form-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.form-action-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  cursor: pointer;
+  text-decoration: none;
+  transition: opacity var(--transition-fast);
+}
+
+.form-action-link:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+
 .form-label .required {
   color: #DC2626;
 }
@@ -1913,7 +2048,17 @@ textarea.form-control {
 }
 
 /* Responsif Mobile & Tablet */
-@media (max-width: 992px) {
+@media (max-width: 1140px) {
+  .nav-links-list {
+    gap: 2px;
+  }
+  .nav-link {
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 1024px) {
   .navbar-nav {
     display: none;
   }
@@ -2154,5 +2299,756 @@ textarea.form-control {
   .cal-dot {
     width: 5px;
     height: 5px;
+  }
+}
+
+@media (max-width: 600px) {
+  .navbar-actions {
+    gap: 6px;
+  }
+  .btn.js-open-subject-modal {
+    padding: 7px 10px;
+    font-size: 12px;
+  }
+  .btn.js-open-add-drawer {
+    padding: 7px 11px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .btn.js-open-subject-modal span {
+    display: none;
+  }
+  .btn.js-open-subject-modal {
+    padding: 8px 10px;
+  }
+}
+
+/* === 20. KOTAK-KOTAK 12 BULAN TAHUN INI === */
+.year-view-container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Grid 12 kotak bulan (Januari s.d. Desember) */
+.year-months-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr); /* 4 kolom di layar laptop/desktop */
+  gap: 16px;
+}
+
+/* Kartu kotak per bulan */
+.year-month-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 16px 18px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+  user-select: none;
+}
+
+.year-month-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Kotak bulan aktif / dipilih */
+.year-month-card.is-selected {
+  border-color: var(--primary);
+  background: var(--surface);
+  box-shadow: 0 0 0 2px var(--primary), var(--shadow-md);
+}
+
+/* Kotak bulan saat ini */
+.year-month-card.is-current-month {
+  border-color: var(--accent-blue);
+}
+
+/* Header di dalam kartu bulan (Nomor & badge) */
+.month-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.month-card-num {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-subtle);
+  letter-spacing: 0.05em;
+}
+
+.month-badge-current {
+  font-size: 10.5px;
+  font-weight: 600;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  background: var(--soft-blue);
+  color: var(--primary);
+}
+
+/* Nama bulan & tahun */
+.month-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.month-card-name {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.25;
+}
+
+.month-card-year {
+  font-size: 12px;
+  color: var(--text-subtle);
+}
+
+/* Bagian bawah kartu bulan (badge jumlah tugas & status) */
+.month-card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 6px;
+  border-top: 1px dashed var(--border);
+}
+
+.month-task-pill {
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2.5px 8px;
+  border-radius: var(--radius-full);
+  display: inline-flex;
+  align-items: center;
+}
+
+.month-task-pill.has-tasks {
+  background: #EFF6FF;
+  color: #2563EB;
+  border: 1px solid #BFDBFE;
+}
+
+[data-theme="dark"] .month-task-pill.has-tasks {
+  background: #1E375C;
+  color: #93C5FD;
+  border-color: #3B82F6;
+}
+
+.month-task-pill.is-empty {
+  background: var(--surface-secondary);
+  color: var(--text-subtle);
+  border: 1px solid var(--border);
+}
+
+.month-subtext {
+  font-size: 11px;
+  color: var(--text-subtle);
+}
+
+/* Banner petunjuk sebelum bulan diklik */
+.year-month-prompt-banner {
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  padding: 32px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 16px;
+  color: var(--text-secondary);
+}
+
+.year-month-prompt-banner .prompt-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-full);
+  background: var(--soft-blue);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.year-month-prompt-banner .prompt-text h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.year-month-prompt-banner .prompt-text p {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+/* Panel detail tugas bulan terpilih */
+.year-month-detail-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  box-shadow: var(--shadow-xs);
+  animation: fadeInDownMonth 0.2s ease-out;
+}
+
+@keyframes fadeInDownMonth {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.month-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--border);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.month-detail-title-group {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.month-detail-badge {
+  width: 42px;
+  height: 42px;
+  border-radius: var(--radius-md);
+  background: var(--soft-blue);
+  color: var(--primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  gap: 2px;
+}
+
+.month-detail-badge span {
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.month-detail-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.month-detail-summary {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-top: 3px;
+  margin-bottom: 0;
+}
+
+.month-detail-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Tampilan kosong di bulan tertentu */
+.month-empty-state {
+  text-align: center;
+  padding: 36px 16px;
+  color: var(--text-secondary);
+}
+
+.month-empty-state .empty-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: var(--radius-full);
+  background: var(--surface-secondary);
+  color: var(--text-subtle);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.month-empty-state h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+}
+
+.month-empty-state p {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+/* Responsif grid bulan */
+@media (max-width: 992px) {
+  .year-months-grid {
+    grid-template-columns: repeat(3, 1fr); /* 3 kolom di tablet */
+  }
+}
+
+@media (max-width: 640px) {
+  .year-months-grid {
+    grid-template-columns: repeat(2, 1fr); /* 2 kolom di HP */
+    gap: 10px;
+  }
+  .year-month-card {
+    padding: 12px 14px;
+  }
+  .month-card-name {
+    font-size: 15px;
+  }
+  .year-month-prompt-banner {
+    flex-direction: column;
+    padding: 24px 16px;
+  }
+  .month-detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .month-detail-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 400px) {
+  .year-months-grid {
+    grid-template-columns: 1fr; /* 1 kolom di layar sangat sempit */
+  }
+}
+
+/* === 21. GRAFIK KURVA PRODUKTIVITAS BULANAN === */
+.editorial-chart-section {
+  margin-bottom: 24px;
+}
+
+/* Kartu wadah grafik */
+.productivity-chart-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 22px 24px;
+  box-shadow: var(--shadow-xs);
+  transition: all var(--transition-fast);
+}
+
+/* Header grafik: Judul & tombol filter */
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+
+.chart-title-group {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.chart-title-icon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-md);
+  background: var(--soft-blue);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.chart-title {
+  font-size: 16.5px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.25;
+}
+
+.chart-subtitle {
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  margin-top: 3px;
+  margin-bottom: 0;
+}
+
+/* Tombol filter kurva */
+.chart-controls {
+  display: flex;
+  align-items: center;
+}
+
+.chart-legend-filters {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.chart-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 11px;
+  border-radius: var(--radius-full);
+  font-size: 11.5px;
+  font-weight: 600;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  user-select: none;
+}
+
+.chart-filter-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.chart-filter-btn.is-active {
+  border-color: var(--primary);
+  background: var(--soft-blue);
+  color: var(--primary);
+}
+
+/* Titik warna legenda filter */
+.legend-color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.legend-color-dot.dot-total {
+  background: #2563EB;
+}
+
+.legend-color-dot.dot-completed {
+  background: #10B981;
+}
+
+.legend-color-dot.dot-progress {
+  background: #3B82F6;
+}
+
+.legend-color-dot.dot-pending {
+  background: #F59E0B;
+}
+
+.filter-count {
+  font-size: 10.5px;
+  padding: 1px 5px;
+  border-radius: var(--radius-full);
+  background: var(--surface-secondary);
+  color: var(--text-primary);
+}
+
+.chart-filter-btn.is-active .filter-count {
+  background: var(--surface);
+  color: var(--primary);
+}
+
+/* Area SVG Kanvas */
+.chart-canvas-wrapper {
+  position: relative;
+  width: 100%;
+  overflow: visible;
+  padding: 8px 0;
+}
+
+.productivity-svg {
+  width: 100%;
+  height: auto;
+  max-height: 220px;
+  display: block;
+  overflow: visible;
+}
+
+/* Garis kurva */
+.chart-curve-path {
+  transition: opacity 0.25s ease, stroke-width 0.2s ease;
+}
+
+.chart-curve-path.is-dimmed {
+  opacity: 0.15 !important;
+}
+
+.chart-curve-path.is-highlighted {
+  opacity: 1 !important;
+  stroke-width: 4px !important;
+}
+
+.chart-area-path {
+  transition: opacity 0.25s ease;
+}
+
+.chart-area-path.is-dimmed {
+  opacity: 0.05 !important;
+}
+
+/* Teks sumbu X dan Y */
+.chart-axis-text {
+  font-size: 10.5px;
+  font-weight: 600;
+  fill: var(--text-subtle);
+  font-family: inherit;
+}
+
+.chart-x-label {
+  font-size: 11px;
+  font-weight: 500;
+  fill: var(--text-secondary);
+  font-family: inherit;
+  transition: fill var(--transition-fast);
+}
+
+.chart-x-label.is-current {
+  fill: var(--primary);
+  font-weight: 700;
+}
+
+/* Titik kurva */
+.chart-dot {
+  fill: var(--surface);
+  stroke: var(--primary);
+  stroke-width: 2.5;
+  transition: all 0.15s ease;
+  cursor: pointer;
+}
+
+.chart-dot.has-val {
+  fill: var(--primary);
+  stroke: var(--surface);
+  stroke-width: 2;
+}
+
+.chart-dot.is-active-hover {
+  r: 7.5 !important;
+  stroke-width: 3 !important;
+}
+
+/* Area hover kolom bulan */
+.chart-hover-col {
+  cursor: pointer;
+}
+
+/* Tooltip melayang */
+.chart-tooltip {
+  position: absolute;
+  pointer-events: none;
+  z-index: 50;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-md);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  min-width: 180px;
+  font-size: 12px;
+  transform: translate(-50%, -100%);
+  margin-top: -12px;
+  transition: opacity 0.12s ease;
+}
+
+.tooltip-header {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.tooltip-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 6px;
+}
+
+.tooltip-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 0;
+}
+
+.tooltip-breakdown {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.tooltip-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+}
+
+.tooltip-row .tt-num {
+  margin-left: auto;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.tt-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.tt-dot.dot-done {
+  background: #10B981;
+}
+
+.tt-dot.dot-prog {
+  background: #3B82F6;
+}
+
+.tt-dot.dot-pend {
+  background: #F59E0B;
+}
+
+/* Baris strip bulan mini di bawah grafik */
+.chart-months-strip {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 4px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+
+.month-strip-item {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 1px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.month-strip-item:hover,
+.month-strip-item.is-hovered {
+  background: var(--surface-secondary);
+}
+
+.month-strip-item.is-current {
+  background: var(--soft-blue);
+}
+
+.strip-month-name {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.strip-month-total {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-subtle);
+}
+
+.strip-month-total.has-tasks {
+  color: var(--primary);
+}
+
+.strip-mini-bar {
+  width: 100%;
+  max-width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--surface-secondary);
+  display: flex;
+  overflow: hidden;
+  margin-top: 2px;
+}
+
+.bar-seg {
+  height: 100%;
+}
+
+.bar-seg.seg-comp {
+  background: #10B981;
+}
+
+.bar-seg.seg-prog {
+  background: #3B82F6;
+}
+
+.bar-seg.seg-pend {
+  background: #F59E0B;
+}
+
+.bar-seg.seg-empty {
+  background: var(--border);
+}
+
+/* Responsif kurva di HP */
+@media (max-width: 768px) {
+  .chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .chart-controls {
+    width: 100%;
+  }
+  .chart-legend-filters {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    flex-wrap: nowrap;
+  }
+  .chart-filter-btn {
+    white-space: nowrap;
+  }
+  .chart-months-strip {
+    gap: 2px;
+  }
+  .strip-month-name {
+    font-size: 9px;
+  }
+}
+
+@media (max-width: 480px) {
+  .productivity-chart-card {
+    padding: 16px 14px;
+  }
+  .chart-months-strip {
+    display: none;
   }
 }

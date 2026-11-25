@@ -1,5 +1,5 @@
 <?php
-// === HEADER WEBSITE: TAG HEAD, SCRIPT TEMA & NOTIFIKASI ===
+// HEADER WEBSITE: TAG HEAD, SCRIPT TEMA & NOTIFIKASI 
 require_once __DIR__ . '/../config/database.php';
 
 $pageTitle = $pageTitle ?? 'StudyList';

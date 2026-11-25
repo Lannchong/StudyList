@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
   const filterForm = document.getElementById('filterForm');           // Form filter & pencarian
   const searchInput = document.getElementById('searchInput');
+  const filterTime = document.getElementById('filterTime');           // 4 filter waktu (hari, minggu, bulan, tahun)
   const filterSubject = document.getElementById('filterSubject');
   const filterStatus = document.getElementById('filterStatus');
   const filterPriority = document.getElementById('filterPriority');
@@ -283,7 +284,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // --- 10. FILTER & PENCARIAN TUGAS ---
   if (filterForm) {
     // Submit otomatis ketika filter dropdown dipilih
-    [filterSubject, filterStatus, filterPriority].forEach(elem => {
+    [filterTime, filterSubject, filterStatus, filterPriority].forEach(elem => {
       if (elem) {
         elem.addEventListener('change', function () {
           filterForm.submit();
@@ -334,7 +335,178 @@ document.addEventListener('DOMContentLoaded', function () {
     }, 6000);
   }
 
-  // --- 12. FITUR DRAG & DROP URUTAN TUGAS ---
+  // Fungsi pembersih teks HTML (Anti-XSS frontend)
+  function escapeHtml(text) {
+    if (!text) return '';
+    const map = {
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#039;'
+    };
+    return String(text).replace(/[&<>"']/g, m => map[m]);
+  }
+
+  // Tampilkan notifikasi toast melayang jika aksi berhasil
+  function showFloatingToast(message) {
+    const container = document.querySelector('.editorial-container') || document.body;
+    const banner = document.createElement('div');
+    banner.className = 'alert-banner success';
+    banner.style.transition = 'all 0.3s ease';
+    banner.innerHTML = `
+      <div class="alert-content">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+          <polyline points="22 4 12 14.01 9 11.01"></polyline>
+        </svg>
+        <span>${escapeHtml(message)}</span>
+      </div>
+      <button type="button" class="alert-close" aria-label="Tutup Notifikasi">&times;</button>
+    `;
+
+    const closeBtn = banner.querySelector('.alert-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', function () {
+        banner.style.opacity = '0';
+        setTimeout(() => banner.remove(), 250);
+      });
+    }
+
+    if (container.firstChild) {
+      container.insertBefore(banner, container.firstChild);
+    } else {
+      container.appendChild(banner);
+    }
+
+    setTimeout(() => {
+      banner.style.opacity = '0';
+      setTimeout(() => banner.remove(), 350);
+    }, 4500);
+  }
+
+  // --- 12. MODAL TAMBAH MATA PELAJARAN (AJAX) ---
+  const addSubjectModal = document.getElementById('addSubjectModal');
+  const addSubjectForm = document.getElementById('addSubjectForm');
+  const newSubjectName = document.getElementById('newSubjectName');
+  const subjectFormFeedback = document.getElementById('subjectFormFeedback');
+  const addSubjectSubmitBtn = document.getElementById('addSubjectSubmitBtn');
+
+  // Klik tombol buka modal tambah mapel (dari navbar atau form drawer)
+  document.addEventListener('click', function (e) {
+    const trigger = e.target.closest('.js-open-subject-modal');
+    if (trigger) {
+      e.preventDefault();
+      if (addSubjectForm) addSubjectForm.reset();
+      if (subjectFormFeedback) {
+        subjectFormFeedback.style.display = 'none';
+        subjectFormFeedback.textContent = '';
+      }
+      if (addSubjectModal) openModal(addSubjectModal);
+      if (newSubjectName) setTimeout(() => newSubjectName.focus(), 150);
+    }
+  });
+
+  // Submit form simpan mata pelajaran baru via AJAX
+  if (addSubjectForm) {
+    addSubjectForm.addEventListener('submit', function (e) {
+      e.preventDefault();
+
+      const nameVal = newSubjectName ? newSubjectName.value.trim() : '';
+      if (!nameVal) {
+        if (newSubjectName) newSubjectName.focus();
+        return;
+      }
+
+      if (addSubjectSubmitBtn) {
+        addSubjectSubmitBtn.disabled = true;
+        addSubjectSubmitBtn.textContent = 'Menyimpan...';
+      }
+      if (subjectFormFeedback) {
+        subjectFormFeedback.style.display = 'none';
+      }
+
+      const formData = new FormData(addSubjectForm);
+
+      fetch('create_subject.php', {
+        method: 'POST',
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json'
+        },
+        body: formData
+      })
+      .then(res => res.json())
+      .then(data => {
+        if (data.success) {
+          if (addSubjectModal) closeModal(addSubjectModal);
+          addSubjectForm.reset();
+
+          // Tambahkan mata pelajaran baru ke semua dropdown select di halaman
+          const subjectSelects = [
+            document.getElementById('addSubjectId'),
+            document.getElementById('editSubjectId'),
+            document.getElementById('taskSubjectId'),
+            document.getElementById('filterSubject')
+          ];
+
+          subjectSelects.forEach(sel => {
+            if (!sel) return;
+            let exists = false;
+            for (let i = 0; i < sel.options.length; i++) {
+              if (sel.options[i].value == data.id) {
+                exists = true;
+                break;
+              }
+            }
+            if (!exists) {
+              const opt = document.createElement('option');
+              opt.value = data.id;
+              opt.textContent = data.subject_name;
+              sel.appendChild(opt);
+            }
+          });
+
+          // Otomatis pilih mata pelajaran jika form tambah/edit tugas sedang aktif
+          const addSelect = document.getElementById('addSubjectId');
+          const editSelect = document.getElementById('editSubjectId');
+          const taskSelect = document.getElementById('taskSubjectId');
+
+          if (addTaskDrawer && addTaskDrawer.classList.contains('is-open') && addSelect) {
+            addSelect.value = data.id;
+          } else if (editTaskDrawer && editTaskDrawer.classList.contains('is-open') && editSelect) {
+            editSelect.value = data.id;
+          } else if (taskSelect) {
+            taskSelect.value = data.id;
+          }
+
+          showFloatingToast(data.message || 'Mata pelajaran berhasil ditambahkan.');
+        } else {
+          if (subjectFormFeedback) {
+            subjectFormFeedback.style.display = 'block';
+            subjectFormFeedback.style.color = '#DC2626';
+            subjectFormFeedback.textContent = data.message || 'Gagal menyimpan mata pelajaran.';
+          }
+        }
+      })
+      .catch(err => {
+        console.error('Error add subject:', err);
+        if (subjectFormFeedback) {
+          subjectFormFeedback.style.display = 'block';
+          subjectFormFeedback.style.color = '#DC2626';
+          subjectFormFeedback.textContent = 'Terjadi kesalahan saat menyimpan mata pelajaran.';
+        }
+      })
+      .finally(() => {
+        if (addSubjectSubmitBtn) {
+          addSubjectSubmitBtn.disabled = false;
+          addSubjectSubmitBtn.textContent = 'Simpan Mapel';
+        }
+      });
+    });
+  }
+
+  // --- 13. FITUR DRAG & DROP URUTAN TUGAS ---
   const taskListContainer = document.getElementById('taskListContainer');
   if (taskListContainer && taskListContainer.getAttribute('data-can-reorder') === 'true') {
     initTaskReordering(taskListContainer);
@@ -969,5 +1141,290 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Render kalender saat halaman pertama kali dibuka
     renderCalendar();
+  }
+
+  // --- 11. FITUR KOTAK-KOTAK 12 BULAN TAHUN INI ---
+  const yearMonthCards = document.querySelectorAll('.js-year-month-card');
+  if (yearMonthCards.length > 0) {
+    const yearMonthPromptBanner = document.getElementById('yearMonthPromptBanner');
+    const yearMonthDetailPanel = document.getElementById('yearMonthDetailPanel');
+    const activeMonthBadgeNum = document.getElementById('activeMonthBadgeNum');
+    const activeMonthTitle = document.getElementById('activeMonthTitle');
+    const activeMonthSummary = document.getElementById('activeMonthSummary');
+    const btnCloseMonthDetail = document.getElementById('btnCloseMonthDetail');
+    const btnAddTaskForMonth = document.getElementById('btnAddTaskForMonth');
+
+    let currentSelectedMonth = null; // Menyimpan bulan yang sedang aktif
+
+    // Fungsi memilih dan menampilkan tugas pada bulan tertentu
+    function selectYearMonth(monthNum, shouldScroll = false) {
+      const targetCard = document.querySelector(`.js-year-month-card[data-month="${monthNum}"]`);
+      if (!targetCard) return;
+
+      currentSelectedMonth = parseInt(monthNum, 10);
+      const monthPad = targetCard.getAttribute('data-month-pad') || String(monthNum).padStart(2, '0');
+      const monthName = targetCard.getAttribute('data-month-name') || '';
+      const totalCount = parseInt(targetCard.getAttribute('data-total') || '0', 10);
+      const activeCount = parseInt(targetCard.getAttribute('data-active') || '0', 10);
+      const compCount = parseInt(targetCard.getAttribute('data-completed') || '0', 10);
+
+      // Tandai kartu bulan yang dipilih
+      yearMonthCards.forEach(c => c.classList.remove('is-selected'));
+      targetCard.classList.add('is-selected');
+
+      // Sembunyikan banner petunjuk & tampilkan panel tugas
+      if (yearMonthPromptBanner) yearMonthPromptBanner.style.display = 'none';
+      if (yearMonthDetailPanel) yearMonthDetailPanel.style.display = 'block';
+
+      // Perbarui judul dan ringkasan bulan terpilih
+      if (activeMonthBadgeNum) activeMonthBadgeNum.textContent = 'Bulan ' + monthPad;
+      if (activeMonthTitle) {
+        const yearStr = targetCard.querySelector('.month-card-year')?.textContent || new Date().getFullYear();
+        activeMonthTitle.textContent = `Tugas Bulan ${monthName} ${yearStr}`;
+      }
+      if (activeMonthSummary) {
+        activeMonthSummary.textContent = `${totalCount} Tugas (${activeCount} belum selesai, ${compCount} selesai)`;
+      }
+
+      // Tampilkan hanya grup tugas di bulan ini
+      document.querySelectorAll('.month-tasks-group').forEach(group => {
+        group.style.display = 'none';
+      });
+      const targetGroup = document.getElementById(`monthTasksGroup-${monthNum}`);
+      if (targetGroup) {
+        targetGroup.style.display = 'block';
+      }
+
+      // Perbarui tombol tambah tugas untuk bulan ini
+      if (btnAddTaskForMonth) {
+        btnAddTaskForMonth.setAttribute('data-month-pad', monthPad);
+      }
+
+      // Simpan parameter month di URL tanpa reload
+      const url = new URL(window.location.href);
+      url.searchParams.set('month', monthNum);
+      window.history.replaceState({}, '', url.toString());
+
+      // Scroll halus jika di layar HP
+      if (shouldScroll && window.innerWidth <= 768 && yearMonthDetailPanel) {
+        yearMonthDetailPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }
+
+    // Fungsi menutup panel tugas bulan
+    function closeYearMonthDetail() {
+      currentSelectedMonth = null;
+      yearMonthCards.forEach(c => c.classList.remove('is-selected'));
+      if (yearMonthDetailPanel) yearMonthDetailPanel.style.display = 'none';
+      if (yearMonthPromptBanner) yearMonthPromptBanner.style.display = 'flex';
+
+      const url = new URL(window.location.href);
+      url.searchParams.delete('month');
+      window.history.replaceState({}, '', url.toString());
+    }
+
+    // Pasang klik pada setiap kartu bulan
+    yearMonthCards.forEach(card => {
+      card.addEventListener('click', function () {
+        const monthNum = this.getAttribute('data-month');
+        if (currentSelectedMonth === parseInt(monthNum, 10)) {
+          closeYearMonthDetail(); // Klik ulang untuk menutup
+        } else {
+          selectYearMonth(monthNum, true); // Buka tugas bulan
+        }
+      });
+
+      card.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          this.click();
+        }
+      });
+    });
+
+    // Tombol tutup panel rincian bulan
+    if (btnCloseMonthDetail) {
+      btnCloseMonthDetail.addEventListener('click', closeYearMonthDetail);
+    }
+
+    // Tombol "+ Tambah Tugas di Bulan Ini"
+    document.addEventListener('click', function (e) {
+      const addMonthBtn = e.target.closest('.js-add-task-month-btn');
+      if (!addMonthBtn) return;
+
+      const monthPad = addMonthBtn.getAttribute('data-month-pad') || 
+                       (currentSelectedMonth ? String(currentSelectedMonth).padStart(2, '0') : '');
+
+      if (monthPad) {
+        const year = new Date().getFullYear();
+        const dueDateInput = document.getElementById('addDueDate');
+        if (dueDateInput) {
+          const today = new Date();
+          const curM = String(today.getMonth() + 1).padStart(2, '0');
+          if (monthPad === curM) {
+            dueDateInput.value = today.toISOString().split('T')[0]; // Hari ini jika bulan aktif
+          } else {
+            dueDateInput.value = `${year}-${monthPad}-01`;           // Tanggal 1 jika bulan lain
+          }
+        }
+      }
+
+      openDrawer(addTaskDrawer); // Buka panel formulir tambah tugas
+      const titleInput = document.getElementById('addTitle');
+      if (titleInput) setTimeout(() => titleInput.focus(), 150);
+    });
+
+    // Otomatis buka bulan jika ada parameter ?month=X di URL
+    const initialUrlParams = new URLSearchParams(window.location.search);
+    const initialMonth = initialUrlParams.get('month');
+    if (initialMonth && document.querySelector(`.js-year-month-card[data-month="${initialMonth}"]`)) {
+      selectYearMonth(initialMonth, false);
+    }
+  }
+
+  // --- 12. FITUR INTERAKSI GRAFIK KURVA PRODUKTIVITAS ---
+  const chartWrapper = document.getElementById('chartCanvasWrapper');
+  const chartSvg = document.getElementById('productivitySvg');
+  const chartTooltip = document.getElementById('chartTooltip');
+  const chartHoverLine = document.getElementById('chartHoverLine');
+  const tooltipHeader = document.getElementById('tooltipHeader');
+  const tooltipTotal = document.getElementById('tooltipTotal');
+  const tooltipCompleted = document.getElementById('tooltipCompleted');
+  const tooltipProgress = document.getElementById('tooltipProgress');
+  const tooltipPending = document.getElementById('tooltipPending');
+
+  const chartFilterBtns = document.querySelectorAll('.js-chart-filter');
+  const chartCurveLines = document.querySelectorAll('.js-curve-line');
+  const chartAreaPath = document.querySelector('.js-chart-area');
+  const chartHoverCols = document.querySelectorAll('.js-chart-col');
+  const chartDots = document.querySelectorAll('.js-chart-dot');
+  const stripItems = document.querySelectorAll('.js-strip-item');
+
+  if (chartWrapper && chartSvg && chartTooltip) {
+    // 1. Filter kurva (Semua / Selesai / Sedang Dikerjakan / Belum Dikerjakan)
+    chartFilterBtns.forEach(btn => {
+      btn.addEventListener('click', function () {
+        const selectedCurve = this.getAttribute('data-curve');
+
+        chartFilterBtns.forEach(b => b.classList.remove('is-active'));
+        this.classList.add('is-active');
+
+        if (selectedCurve === 'total') {
+          // Tampilkan semua kurva normal
+          chartCurveLines.forEach(line => {
+            line.classList.remove('is-dimmed', 'is-highlighted');
+          });
+          if (chartAreaPath) chartAreaPath.classList.remove('is-dimmed');
+        } else {
+          // Sorot kurva yang dipilih dan redupkan kurva lain
+          chartCurveLines.forEach(line => {
+            const curveType = line.getAttribute('data-curve');
+            if (curveType === selectedCurve) {
+              line.classList.remove('is-dimmed');
+              line.classList.add('is-highlighted');
+            } else {
+              line.classList.remove('is-highlighted');
+              line.classList.add('is-dimmed');
+            }
+          });
+          if (chartAreaPath) chartAreaPath.classList.add('is-dimmed');
+        }
+      });
+    });
+
+    // 2. Interaksi Hover pada kolom bulan di grafik
+    function showChartTooltip(col) {
+      const monthNum = col.getAttribute('data-month');
+      const monthName = col.getAttribute('data-name') || '';
+      const total = col.getAttribute('data-total') || '0';
+      const completed = col.getAttribute('data-completed') || '0';
+      const progress = col.getAttribute('data-progress') || '0';
+      const pending = col.getAttribute('data-pending') || '0';
+      const x = parseFloat(col.getAttribute('data-x') || '0');
+      const y = parseFloat(col.getAttribute('data-y') || '0');
+
+      // Tampilkan garis penunjuk vertikal
+      if (chartHoverLine) {
+        chartHoverLine.setAttribute('x1', x);
+        chartHoverLine.setAttribute('x2', x);
+        chartHoverLine.style.display = 'block';
+      }
+
+      // Sorot titik data bulan
+      chartDots.forEach(dot => {
+        if (dot.getAttribute('data-month') === monthNum) {
+          dot.classList.add('is-active-hover');
+        } else {
+          dot.classList.remove('is-active-hover');
+        }
+      });
+
+      // Sorot strip item di bawah grafik
+      stripItems.forEach(item => {
+        if (item.getAttribute('data-month') === monthNum) {
+          item.classList.add('is-hovered');
+        } else {
+          item.classList.remove('is-hovered');
+        }
+      });
+
+      // Isi teks tooltip
+      const year = new Date().getFullYear();
+      if (tooltipHeader) tooltipHeader.textContent = `${monthName} ${year}`;
+      if (tooltipTotal) tooltipTotal.textContent = `${total} Tugas`;
+      if (tooltipCompleted) tooltipCompleted.textContent = completed;
+      if (tooltipProgress) tooltipProgress.textContent = progress;
+      if (tooltipPending) tooltipPending.textContent = pending;
+
+      // Hitung posisi koordinat relatif di wrapper
+      const wrapRect = chartWrapper.getBoundingClientRect();
+      const pixelX = (x / 960) * wrapRect.width;
+      const pixelY = (y / 215) * wrapRect.height;
+
+      chartTooltip.style.left = `${pixelX}px`;
+      chartTooltip.style.top = `${Math.max(pixelY, 20)}px`;
+      chartTooltip.style.display = 'block';
+    }
+
+    function hideChartTooltip() {
+      if (chartHoverLine) chartHoverLine.style.display = 'none';
+      if (chartTooltip) chartTooltip.style.display = 'none';
+      chartDots.forEach(dot => dot.classList.remove('is-active-hover'));
+      stripItems.forEach(item => item.classList.remove('is-hovered'));
+    }
+
+    chartHoverCols.forEach(col => {
+      col.addEventListener('mouseenter', () => showChartTooltip(col));
+      col.addEventListener('mousemove', () => showChartTooltip(col));
+      col.addEventListener('touchstart', () => {
+        showChartTooltip(col);
+      }, { passive: true });
+
+      // Jika diklik, buka bulan terkait jika sedang di menu Tahun Ini
+      col.addEventListener('click', function () {
+        const monthNum = this.getAttribute('data-month');
+        if (typeof selectYearMonth === 'function' && document.querySelector(`.js-year-month-card[data-month="${monthNum}"]`)) {
+          selectYearMonth(monthNum, true);
+        }
+      });
+    });
+
+    chartWrapper.addEventListener('mouseleave', hideChartTooltip);
+
+    // Hubungkan strip bulan di bawah kurva ke tooltip & klik
+    stripItems.forEach(item => {
+      item.addEventListener('mouseenter', function () {
+        const m = this.getAttribute('data-month');
+        const matchCol = document.querySelector(`.js-chart-col[data-month="${m}"]`);
+        if (matchCol) showChartTooltip(matchCol);
+      });
+      item.addEventListener('mouseleave', hideChartTooltip);
+      item.addEventListener('click', function () {
+        const m = this.getAttribute('data-month');
+        if (typeof selectYearMonth === 'function' && document.querySelector(`.js-year-month-card[data-month="${m}"]`)) {
+          selectYearMonth(m, true);
+        }
+      });
+    });
   }
 });

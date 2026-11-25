@@ -25,7 +25,7 @@ $dbCharset  = 'utf8mb4';             // Karakter teks UTF-8
 $pdo = null;
 $dbError = null;
 
-// === SCRIPT UTAMA PENGHUBUNG KE DATABASE MYSQL (PDO) ===
+//  SCRIPT UTAMA PENGHUBUNG KE DATABASE MYSQL (PDO) 
 try {
     $dsn = "mysql:host={$dbHost};port={$dbPort};dbname={$dbName};charset={$dbCharset}";
     

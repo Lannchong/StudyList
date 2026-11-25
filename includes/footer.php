@@ -1,5 +1,5 @@
 <?php
-// === FOOTER, DRAWER FORMULIR & MODAL KONFIRMASI HAPUS ===
+// FOOTER, DRAWER FORMULIR & MODAL KONFIRMASI HAPUS 
 $currentView = $currentView ?? 'all';
 $modalSubjects = getAllSubjects($pdo);
 ?>
@@ -7,7 +7,7 @@ $modalSubjects = getAllSubjects($pdo);
   </main> <!-- .editorial-main-content -->
 </div> <!-- .editorial-site-wrapper -->
 
-<!-- === 1. DRAWER FORM TAMBAH TUGAS (POST ke create.php) === -->
+<!-- 1. DRAWER FORM TAMBAH TUGAS (POST ke create.php) -->
 <div class="drawer-overlay" id="addTaskDrawer" role="dialog" aria-modal="true" aria-labelledby="addDrawerTitle">
   <div class="drawer-backdrop js-close-drawer"></div> <!-- Latar gelap untuk tutup drawer -->
 
@@ -33,7 +33,10 @@ $modalSubjects = getAllSubjects($pdo);
 
         <!-- Pilihan mata pelajaran -->
         <div class="form-group">
-          <label class="form-label" for="addSubjectId">Mata Pelajaran <span class="required">*</span></label>
+          <div class="form-label-row">
+            <label class="form-label" for="addSubjectId">Mata Pelajaran <span class="required">*</span></label>
+            <button type="button" class="form-action-link js-open-subject-modal" title="Tambah Mata Pelajaran Baru">+ Tambah Mapel</button>
+          </div>
           <div class="select-wrapper">
             <select id="addSubjectId" name="subject_id" class="form-control" required>
               <option value="">Pilih Mata Pelajaran</option>
@@ -131,7 +134,10 @@ $modalSubjects = getAllSubjects($pdo);
 
         <!-- Edit mata pelajaran -->
         <div class="form-group">
-          <label class="form-label" for="editSubjectId">Mata Pelajaran <span class="required">*</span></label>
+          <div class="form-label-row">
+            <label class="form-label" for="editSubjectId">Mata Pelajaran <span class="required">*</span></label>
+            <button type="button" class="form-action-link js-open-subject-modal" title="Tambah Mata Pelajaran Baru">+ Tambah Mapel</button>
+          </div>
           <div class="select-wrapper">
             <select id="editSubjectId" name="subject_id" class="form-control" required>
               <option value="">Pilih Mata Pelajaran</option>
@@ -231,6 +237,42 @@ $modalSubjects = getAllSubjects($pdo);
       <div class="editorial-modal-footer">
         <button type="button" class="btn btn-editorial-outline js-close-modal">Batal</button>
         <button type="submit" id="deleteSubmitBtn" class="btn btn-editorial-danger">Hapus Tugas</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- === 4. MODAL TAMBAH MATA PELAJARAN (POST ke create_subject.php) === -->
+<div class="editorial-modal-overlay" id="addSubjectModal" role="dialog" aria-modal="true" aria-labelledby="addSubjectModalTitle">
+  <div class="editorial-modal-container">
+    <div class="editorial-modal-header">
+      <h3 id="addSubjectModalTitle" class="editorial-modal-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+        </svg>
+        <span>Tambah Mata Pelajaran</span>
+      </h3>
+      <button type="button" class="drawer-close-btn js-close-modal" aria-label="Tutup Dialog">&times;</button>
+    </div>
+
+    <!-- Form simpan mata pelajaran baru -->
+    <form id="addSubjectForm" action="create_subject.php" method="POST">
+      <input type="hidden" name="view" value="<?= e($currentView) ?>">
+
+      <div class="editorial-modal-body">
+        <div class="form-group" style="margin-bottom: 0;">
+          <label class="form-label" for="newSubjectName">Nama Mata Pelajaran <span class="required">*</span></label>
+          <input type="text" id="newSubjectName" name="subject_name" class="form-control" required maxlength="80" placeholder="Contoh: Fisika, Biologi, Kimia, dll." autocomplete="off">
+          <small class="form-help" style="display:block; margin-top: 6px; font-size: 12px; color: var(--text-subtle);">Mata pelajaran akan otomatis tersimpan dan dapat langsung dipilih untuk tugas.</small>
+          <div id="subjectFormFeedback" style="display: none; margin-top: 8px; font-size: 13px; font-weight: 500;"></div>
+        </div>
+      </div>
+
+      <!-- Tombol aksi Simpan Mapel & Batal -->
+      <div class="editorial-modal-footer">
+        <button type="button" class="btn btn-editorial-outline js-close-modal">Batal</button>
+        <button type="submit" id="addSubjectSubmitBtn" class="btn btn-editorial-primary">Simpan Mapel</button>
       </div>
     </form>
   </div>

@@ -1,8 +1,6 @@
--- ========================================================
 -- DATABASE: school_todolist_db
 -- StudyList - School To Do List Website
 -- Engine: InnoDB | Charset: utf8mb4 | Collation: utf8mb4_unicode_ci
--- ========================================================
 
 -- 1. CREATE DATABASE
 CREATE DATABASE IF NOT EXISTS `school_todolist_db`

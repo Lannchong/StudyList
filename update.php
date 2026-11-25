@@ -1,5 +1,5 @@
 <?php
-// === PROSES SIMPAN PERUBAHAN TUGAS (UPDATE) ===
+// PROSES SIMPAN PERUBAHAN TUGAS (UPDATE) 
 require_once __DIR__ . '/config/database.php';
 
 // Ambil daftar mata pelajaran untuk pilihan dropdown
@@ -178,7 +178,10 @@ require_once __DIR__ . '/includes/header.php';
     </div>
 
     <div class="form-group">
-      <label class="form-label" for="taskSubjectId">Mata Pelajaran <span class="required">*</span></label>
+      <div class="form-label-row">
+        <label class="form-label" for="taskSubjectId">Mata Pelajaran <span class="required">*</span></label>
+        <button type="button" class="form-action-link js-open-subject-modal" title="Tambah Mata Pelajaran Baru">+ Tambah Mapel</button>
+      </div>
       <div class="select-wrapper">
         <select id="taskSubjectId" name="subject_id" class="form-control" required>
           <option value="">Pilih Mata Pelajaran</option>
